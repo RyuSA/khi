@@ -219,4 +219,3 @@ check_prerequisites() {
 }
 
 log "INFO" "Checking development environment prerequisites..."
-check_prerequisites
