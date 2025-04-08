@@ -116,6 +116,7 @@ func (b *bigqueryJobParser) Parse(ctx context.Context, l *log.LogEntity, cs *his
 		str = "success"
 	} else {
 		str = "failed"
+		cs.RecordLogSeverity(enum.SeverityError)
 	}
 
 	// This summary shows on right panel
