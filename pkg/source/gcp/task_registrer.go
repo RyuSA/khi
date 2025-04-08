@@ -17,6 +17,7 @@ package gcp
 import (
 	"github.com/GoogleCloudPlatform/khi/pkg/inspection"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/bigquery"
 	composer_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/cloud-composer"
 	composer_form "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/cloud-composer/form"
 	composer_inspection_type "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/cloud-composer/inspectiontype"
@@ -290,6 +291,10 @@ func commonPreparation(inspectionServer *inspection.InspectionTaskServer) error 
 	if err != nil {
 		return err
 	}
+	err = inspectionServer.AddInspectionType(bigquery.BigQueryInspectionType)
+	if err != nil {
+		return err
+	}
 
 	// Composer Query Task
 	err = inspectionServer.AddTask(composer_query.ComposerMonitoringLogQueryTask)
@@ -341,6 +346,16 @@ func commonPreparation(inspectionServer *inspection.InspectionTaskServer) error 
 	}
 
 	err = inspectionServer.AddTask(composer_task.AirflowDagProcessorLogParseJob)
+	if err != nil {
+		return err
+	}
+
+	// BigQuery
+	err = inspectionServer.AddTaskDefinition(bigquery.BigQueryJobQueryTask)
+	if err != nil {
+		return err
+	}
+	err = inspectionServer.AddTaskDefinition(bigquery.BigQueryJobParserTask)
 	if err != nil {
 		return err
 	}
