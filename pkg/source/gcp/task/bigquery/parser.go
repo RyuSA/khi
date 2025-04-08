@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"time"
 
-	inspection_task "github.com/GoogleCloudPlatform/khi/pkg/inspection/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/log"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
@@ -156,4 +155,4 @@ func parseTime(timeString string) time.Time {
 	return t
 }
 
-var BigQueryJobParserTask = parser.NewParserTaskFromParser(BigQueryJobParserTaskID, &bigqueryJobParser{}, true, inspection_task.InspectionTypeLabel(InspectionTypeId))
+var BigQueryJobParserTask = parser.NewParserTaskFromParser(BigQueryJobParserTaskID, &bigqueryJobParser{}, true, []string{InspectionTypeId})
