@@ -34,7 +34,7 @@ protoPayload.serviceData.jobCompletedEvent.eventName="query_job_completed"
 `, projectId)
 }
 
-var BigQueryJobCompletedTask = query.NewQueryGeneratorTask(BigQueryJobQueryTaskID, "BigQuery Query Completed logs", enum.LogTypeBigQueryResource, []taskid.UntypedTaskReference{
+var BigQueryJobCompletedTask = query.NewQueryGeneratorTask(BigQueryCompletedEventQueryID, "BigQuery CompletedEvent logs", enum.LogTypeBigQueryResource, []taskid.UntypedTaskReference{
 	gcp_task.InputProjectIdTaskID.Ref(),
 }, &query.ProjectIDDefaultResourceNamesGenerator{}, func(ctx context.Context, i inspection_task_interface.InspectionTaskMode) ([]string, error) {
 	projectId := task.GetTaskResult(ctx, gcp_task.InputProjectIdTaskID.Ref())

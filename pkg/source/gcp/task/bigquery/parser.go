@@ -53,7 +53,7 @@ func (b *bigqueryJobParser) Grouper() grouper.LogGrouper {
 
 // LogTask implements parser.Parser.
 func (b *bigqueryJobParser) LogTask() taskid.TaskReference[[]*log.Log] {
-	return BigQueryJobQueryTaskID.Ref()
+	return BigQueryCompletedEventQueryID.Ref()
 }
 
 // Parse implements parser.Parser.

@@ -21,7 +21,7 @@ import (
 )
 
 const BigQueryPrefix = gcp_task.GCPPrefix + "bigquery/"
-const BigQueryQueryPrefix = gcp_task.GCPPrefix + "query/bigquery/"
+const BigQueryJobPrefix = gcp_task.GCPPrefix + "query/bigquery/"
 
-var BigQueryJobQueryTaskID = taskid.NewDefaultImplementationID[[]*log.Log](BigQueryQueryPrefix + "jobs")
+var BigQueryCompletedEventQueryID = taskid.NewDefaultImplementationID[[]*log.Log](BigQueryJobPrefix + "completedEvent")
 var BigQueryJobParserTaskID = taskid.NewDefaultImplementationID[struct{}](BigQueryPrefix + "jobs")
