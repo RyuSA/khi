@@ -26,18 +26,17 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
 
-func GenerateBigQueryJobQuery(projectId string) string {
+func GenerateBigQueryJobCompletedFilter(projectId string) string {
 	return fmt.Sprintf(`
 resource.labels.project_id="%s"
 resource.type="bigquery_resource"
 protoPayload.serviceData.jobCompletedEvent.eventName="query_job_completed"
-protoPayload.serviceData.jobCompletedEvent.job.jobStatus.state="DONE"
 `, projectId)
 }
 
-var BigQueryJobQueryTask = query.NewQueryGeneratorTask(BigQueryJobQueryTaskID, "BigQuery Query Job logs", enum.LogTypeBigQueryResource, []taskid.UntypedTaskReference{
-	gcp_task.InputProjectIdTaskID, // need a project id form
-}, func(ctx context.Context, i inspection_task_interface.InspectionTaskMode) ([]string, error) {
-	projectId := task.GetTaskResult(ctx, gcp_task.InputProjectIdTaskID.GetTaskReference())
-	return []string{GenerateBigQueryJobQuery(projectId)}, nil
-}, GenerateBigQueryJobQuery("google-cloud-project-id"))
+var BigQueryJobCompletedTask = query.NewQueryGeneratorTask(BigQueryJobQueryTaskID, "BigQuery Query Completed logs", enum.LogTypeBigQueryResource, []taskid.UntypedTaskReference{
+	gcp_task.InputProjectIdTaskID.Ref(),
+}, &query.ProjectIDDefaultResourceNamesGenerator{}, func(ctx context.Context, i inspection_task_interface.InspectionTaskMode) ([]string, error) {
+	projectId := task.GetTaskResult(ctx, gcp_task.InputProjectIdTaskID.Ref())
+	return []string{GenerateBigQueryJobCompletedFilter(projectId)}, nil
+}, GenerateBigQueryJobCompletedFilter("google-cloud-project-id"))

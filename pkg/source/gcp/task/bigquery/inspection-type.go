@@ -27,5 +27,5 @@ var BigQueryInspectionType = inspection.InspectionType{
 	Name:        "BigQuery",
 	Description: `Visualize BigQuery Job. This inspection allows you to see all BigQuery jobs whitin the specified project.`,
 	Icon:        "assets/icons/composer.webp",
-	Priority:    math.MaxInt - 2,
+	Priority:    math.MaxInt - 1001,
 }

@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
 	"github.com/GoogleCloudPlatform/khi/pkg/log"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
@@ -37,12 +38,12 @@ func (b *bigqueryJobParser) Dependencies() []taskid.UntypedTaskReference {
 
 // Description implements parser.Parser.
 func (b *bigqueryJobParser) Description() string {
-	return "Bigquery Jobs"
+	return "Gather completedEvent logs and visualize when did jobs create/start/finish."
 }
 
 // GetParserName implements parser.Parser.
 func (b *bigqueryJobParser) GetParserName() string {
-	return "BigQuery Jobs Parser"
+	return "BigQuery CompletedEvent Parser"
 }
 
 // Grouper implements parser.Parser.
@@ -51,12 +52,12 @@ func (b *bigqueryJobParser) Grouper() grouper.LogGrouper {
 }
 
 // LogTask implements parser.Parser.
-func (b *bigqueryJobParser) LogTask() taskid.TaskReference[[]*log.LogEntity] {
-	return BigQueryJobQueryTaskID.GetTaskReference()
+func (b *bigqueryJobParser) LogTask() taskid.TaskReference[[]*log.Log] {
+	return BigQueryJobQueryTaskID.Ref()
 }
 
 // Parse implements parser.Parser.
-func (b *bigqueryJobParser) Parse(ctx context.Context, l *log.LogEntity, cs *history.ChangeSet, builder *history.Builder) error {
+func (b *bigqueryJobParser) Parse(ctx context.Context, l *log.Log, cs *history.ChangeSet, builder *history.Builder) error {
 	// Parse BigQuery job from LogEntity
 	job, err := NewBigQueryJobFromYamlStrings(l)
 	if err != nil {
@@ -64,11 +65,11 @@ func (b *bigqueryJobParser) Parse(ctx context.Context, l *log.LogEntity, cs *his
 	}
 
 	// Execution User
-	requester := l.GetStringOrDefault("protoPayload.authenticationInfo.principalEmail", "unknown")
+	requester := l.ReadStringOrDefault("protoPayload.authenticationInfo.principalEmail", "unknown")
 
 	// BigQuery resource path
 	resourcePath := job.ToResourcePath()
-	body, _ := l.GetChildYamlOf("protoPayload.serviceData.jobCompletedEvent.job")
+	body, _ := l.Serialize("protoPayload.serviceData.jobCompletedEvent.job", &structured.YAMLNodeSerializer{})
 
 	// Record New Revision: Inserted BQ job
 	cs.RecordRevision(resourcePath, &history.StagingResourceRevision{
@@ -77,7 +78,7 @@ func (b *bigqueryJobParser) Parse(ctx context.Context, l *log.LogEntity, cs *his
 		Requestor:  requester,
 		ChangeTime: parseTime(job.Statistics.CreateTime),
 		Partial:    false,
-		Body:       body,
+		Body:       string(body),
 	})
 
 	// Record New Revision: Started BQ job
@@ -87,7 +88,7 @@ func (b *bigqueryJobParser) Parse(ctx context.Context, l *log.LogEntity, cs *his
 		Requestor:  requester,
 		ChangeTime: parseTime(job.Statistics.StartTime),
 		Partial:    false,
-		Body:       body,
+		Body:       string(body),
 	})
 
 	var state enum.RevisionState
@@ -107,7 +108,7 @@ func (b *bigqueryJobParser) Parse(ctx context.Context, l *log.LogEntity, cs *his
 		Requestor:  requester,
 		ChangeTime: parseTime(job.Statistics.EndTime),
 		Partial:    false,
-		Body:       body,
+		Body:       string(body),
 	})
 
 	var str string
@@ -133,13 +134,13 @@ func (b *bigqueryJobParser) TargetLogType() enum.LogType {
 
 var _ parser.Parser = (*bigqueryJobParser)(nil)
 
-func NewBigQueryJobFromYamlStrings(l *log.LogEntity) (*BigQueryJob, error) {
-	jobYaml, err := l.GetChildYamlOf("protoPayload.serviceData.jobCompletedEvent.job")
+func NewBigQueryJobFromYamlStrings(l *log.Log) (*BigQueryJob, error) {
+	jobYaml, err := l.Serialize("protoPayload.serviceData.jobCompletedEvent.job", &structured.YAMLNodeSerializer{})
 	if err != nil {
 		return nil, err
 	}
 	var job = &BigQueryJob{}
-	err = yaml.Unmarshal([]byte(jobYaml), job)
+	err = yaml.Unmarshal(jobYaml, job)
 	if err != nil {
 		return nil, err
 	}
