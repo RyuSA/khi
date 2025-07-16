@@ -351,7 +351,7 @@ func commonPreparation(inspectionServer *inspection.InspectionTaskServer) error 
 	}
 
 	// BigQuery
-	err = inspectionServer.AddTask(bigquery.BigQueryJobQueryTask)
+	err = inspectionServer.AddTask(bigquery.BigQueryJobCompletedTask)
 	if err != nil {
 		return err
 	}

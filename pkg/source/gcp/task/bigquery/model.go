@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
-	"gopkg.in/yaml.v3"
 )
 
 type BigQueryJob struct {
@@ -40,25 +39,10 @@ type BigQueryJobStatistics struct {
 	Reservation string `yaml:"reservation"`
 }
 
-// FromYamlString parses a YAML string and populates the BigQueryJobStatistics struct
-func (b *BigQueryJobStatistics) FromYamlString(yamlString string) {
-	err := yaml.Unmarshal([]byte(yamlString), b)
-	if err != nil {
-		panic(err)
-	}
-}
-
 type BigqueryJobName struct {
 	JobId     string `yaml:"jobId"`
 	ProjectId string `yaml:"projectId"`
 	Location  string `yaml:"location"`
-}
-
-func (b *BigqueryJobName) FromYamlString(yamlString string) {
-	err := yaml.Unmarshal([]byte(yamlString), b)
-	if err != nil {
-		panic(err)
-	}
 }
 
 type BigQueryJobStatus struct {
