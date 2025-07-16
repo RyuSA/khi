@@ -179,6 +179,10 @@ We will implement this entire flow, starting with defining the data model.
 
 With the enums in place, we can now implement the logic for fetching and parsing BigQuery logs. We'll create a new package for this: `pkg/source/gcp/task/bigquery/`.
 
+> **Note on Package Structure**
+> As recommended in the "Package structure for tasks" section of the [KHI Task system concept](../khi-task-system-concept.md) document, we are separating different concerns into sub-packages. You will see `taskid`, `query`, and `inspectiontype` sub-packages. This is a practice in KHI to avoid import cycles and improve code organization.
+
+
 ### Step 4.1: Create Data Models
 
 First, define the Go structs that will hold the data parsed from the logs. These structs should mirror the structure of the BigQuery job data in the audit logs.
@@ -188,8 +192,7 @@ First, define the Go structs that will hold the data parsed from the logs. These
 package bigquery
 
 import (
-	"fmt"
-	"github.com/GoogleCloudPlatform/khi/pkg/model/history/resourcepath"
+...
 )
 
 type BigQueryJob struct {
@@ -231,11 +234,11 @@ The `ToResourcePath` method is crucial. It creates a unique identifier for each 
 
 ### Step 4.2: Define Task IDs
 
-Every task in KHI needs a unique ID. Let's define them for our new BigQuery tasks.
+Every task in KHI needs a unique ID. To keep the code organized and prevent import cycles, we define task IDs in a separate `taskid` package.
 
-**File:** `pkg/source/gcp/task/bigquery/taskid.go`
+**File:** `pkg/source/gcp/task/bigquery/taskid/taskid.go`
 ```go
-package bigquery
+package bigquery_taskid
 
 import (
 	"github.com/GoogleCloudPlatform/khi/pkg/log"
@@ -244,24 +247,22 @@ import (
 )
 
 const BigQueryPrefix = gcp_task.GCPPrefix + "bigquery/"
-const BigQueryJobPrefix = gcp_task.GCPPrefix + "query/bigquery/"
+const BigQueryQueryPrefix = gcp_task.GCPPrefix + "query/bigquery/"
 
-var BigQueryCompletedEventQueryID = taskid.NewDefaultImplementationID[[]*log.Log](BigQueryJobPrefix + "completedEvent")
+var BigQueryCompletedEventQueryID = taskid.NewDefaultImplementationID[[]*log.Log](BigQueryQueryPrefix + "completedEvent")
 var BigQueryJobParserTaskID = taskid.NewDefaultImplementationID[struct{}](BigQueryPrefix + "jobs")
 ```
 
 ### Step 4.3: Implement the Log Query
 
-This task generates the filter used to fetch the relevant audit logs from Google Cloud Logging.
+This task generates the filter used to fetch the relevant audit logs from Google Cloud Logging. We'll place this in its own `query` package.
 
-**File:** `pkg/source/gcp/task/bigquery/query.go`
+**File:** `pkg/source/gcp/task/bigquery/query/query.go`
 ```go
-package bigquery
+package bigquery_query
 
 import (
-	"context"
-	"fmt"
-	// ... other imports
+...
 )
 
 func GenerateBigQueryJobCompletedFilter(projectId string) string {
@@ -272,7 +273,7 @@ protoPayload.serviceData.jobCompletedEvent.eventName="query_job_completed"
 `, projectId)
 }
 
-var BigQueryJobCompletedTask = query.NewQueryGeneratorTask(BigQueryCompletedEventQueryID, "BigQuery CompletedEvent logs", enum.LogTypeBigQueryResource, []taskid.UntypedTaskReference{
+var BigQueryJobCompletedTask = query.NewQueryGeneratorTask(bqtaskid.BigQueryCompletedEventQueryID, "BigQuery CompletedEvent logs", enum.LogTypeBigQueryResource, []taskid.UntypedTaskReference{
 	gcp_task.InputProjectIdTaskID.Ref(),
 }, &query.ProjectIDDefaultResourceNamesGenerator{}, func(ctx context.Context, i inspection_task_interface.InspectionTaskMode) ([]string, error) {
 	projectId := task.GetTaskResult(ctx, gcp_task.InputProjectIdTaskID.Ref())
@@ -289,11 +290,19 @@ This is the core of our new feature. The parser takes a single log entry and cre
 package bigquery
 
 import (
-	// ... imports
+...
 )
 
 type bigqueryJobParser struct{}
 
+// ... (other parser methods)
+
+// LogTask implements parser.Parser.
+func (b *bigqueryJobParser) LogTask() taskid.TaskReference[[]*log.Log] {
+	return bqtaskid.BigQueryCompletedEventQueryID.Ref()
+}
+
+// Parse implements parser.Parser.
 func (b *bigqueryJobParser) Parse(ctx context.Context, l *log.Log, cs *history.ChangeSet, builder *history.Builder) error {
 	job, err := NewBigQueryJobFromYamlStrings(l)
 	if err != nil {
@@ -344,7 +353,7 @@ func (b *bigqueryJobParser) Parse(ctx context.Context, l *log.Log, cs *history.C
 	return nil
 }
 
-// ... other methods of the parser interface
+var BigQueryJobParserTask = parser.NewParserTaskFromParser(bqtaskid.BigQueryJobParserTaskID, &bigqueryJobParser{}, true, []string{bqinspectiontype.InspectionTypeId})
 ```
 
 ## Part 5: Testing the Feature
@@ -420,15 +429,14 @@ The final step is to register our new parser and inspection type with the KHI ap
 
 ### Step 6.1: Define the Inspection Type
 
-The inspection type tells KHI about your new feature, giving it a name, description, and icon to display in the UI.
+The inspection type tells KHI about your new feature, giving it a name, description, and icon to display in the UI. This should be in its own `inspectiontype` package.
 
-**File:** `pkg/source/gcp/task/bigquery/inspection-type.go`
+**File:** `pkg/source/gcp/task/bigquery/inspectiontype/inspection-type.go`
 ```go
-package bigquery
+package bigquery_inspectiontype
 
 import (
-	"math"
-	"github.com/GoogleCloudPlatform/khi/pkg/inspection"
+...
 )
 
 var InspectionTypeId = "gcp-bigquery"
@@ -451,10 +459,7 @@ Finally, we register everything with the inspection server.
 package gcp
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/inspection"
-	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/bigquery" // New import
-	// ... other imports
+...
 )
 
 func commonPreparation(inspectionServer *inspection.InspectionTaskServer) error {
@@ -464,7 +469,7 @@ func commonPreparation(inspectionServer *inspection.InspectionTaskServer) error 
 		return err
 	}
 	// New: Register BigQuery Inspection Type
-	err = inspectionServer.AddInspectionType(bigquery.BigQueryInspectionType)
+	err = inspectionServer.AddInspectionType(bigquery_inspection_type.BigQueryInspectionType)
 	if err != nil {
 		return err
 	}
@@ -472,7 +477,7 @@ func commonPreparation(inspectionServer *inspection.InspectionTaskServer) error 
 	// ... other task registrations
 
 	// New: Register BigQuery Tasks
-	err = inspectionServer.AddTask(bigquery.BigQueryJobCompletedTask)
+	err = inspectionServer.AddTask(bigquery_query.BigQueryJobCompletedTask)
 	if err != nil {
 		return err
 	}

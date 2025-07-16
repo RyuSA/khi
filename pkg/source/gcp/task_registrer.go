@@ -18,6 +18,8 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/inspection"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/bigquery"
+	bigquery_inspection_type "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/bigquery/inspectiontype"
+	bigquery_query "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/bigquery/query"
 	composer_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/cloud-composer"
 	composer_form "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/cloud-composer/form"
 	composer_inspection_type "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/cloud-composer/inspectiontype"
@@ -291,7 +293,7 @@ func commonPreparation(inspectionServer *inspection.InspectionTaskServer) error 
 	if err != nil {
 		return err
 	}
-	err = inspectionServer.AddInspectionType(bigquery.BigQueryInspectionType)
+	err = inspectionServer.AddInspectionType(bigquery_inspection_type.BigQueryInspectionType)
 	if err != nil {
 		return err
 	}
@@ -351,7 +353,7 @@ func commonPreparation(inspectionServer *inspection.InspectionTaskServer) error 
 	}
 
 	// BigQuery
-	err = inspectionServer.AddTask(bigquery.BigQueryJobCompletedTask)
+	err = inspectionServer.AddTask(bigquery_query.BigQueryJobCompletedTask)
 	if err != nil {
 		return err
 	}

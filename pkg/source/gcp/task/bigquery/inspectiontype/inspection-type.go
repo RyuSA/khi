@@ -12,16 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bigquery
+package bigquery_inspectiontype
 
 import (
-	"github.com/GoogleCloudPlatform/khi/pkg/log"
-	gcp_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
+	"math"
+
+	"github.com/GoogleCloudPlatform/khi/pkg/inspection"
 )
 
-const BigQueryPrefix = gcp_task.GCPPrefix + "bigquery/"
-const BigQueryJobPrefix = gcp_task.GCPPrefix + "query/bigquery/"
+var InspectionTypeId = "gcp-bigquery"
 
-var BigQueryCompletedEventQueryID = taskid.NewDefaultImplementationID[[]*log.Log](BigQueryJobPrefix + "completedEvent")
-var BigQueryJobParserTaskID = taskid.NewDefaultImplementationID[struct{}](BigQueryPrefix + "jobs")
+var BigQueryInspectionType = inspection.InspectionType{
+	Id:          InspectionTypeId,
+	Name:        "BigQuery",
+	Description: `Visualize BigQuery Job. This inspection allows you to see all BigQuery jobs whitin the specified project.`,
+	Icon:        "assets/icons/composer.webp",
+	Priority:    math.MaxInt - 1001,
+}
