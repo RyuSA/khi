@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bigquery
+package bigquery_query
 
 import (
 	"context"
@@ -22,6 +22,7 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/query"
 	gcp_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
+	bqtaskid "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/bigquery/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/task"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 )
@@ -34,7 +35,7 @@ protoPayload.serviceData.jobCompletedEvent.eventName="query_job_completed"
 `, projectId)
 }
 
-var BigQueryJobCompletedTask = query.NewQueryGeneratorTask(BigQueryCompletedEventQueryID, "BigQuery CompletedEvent logs", enum.LogTypeBigQueryResource, []taskid.UntypedTaskReference{
+var BigQueryJobCompletedTask = query.NewQueryGeneratorTask(bqtaskid.BigQueryCompletedEventQueryID, "BigQuery CompletedEvent logs", enum.LogTypeBigQueryResource, []taskid.UntypedTaskReference{
 	gcp_task.InputProjectIdTaskID.Ref(),
 }, &query.ProjectIDDefaultResourceNamesGenerator{}, func(ctx context.Context, i inspection_task_interface.InspectionTaskMode) ([]string, error) {
 	projectId := task.GetTaskResult(ctx, gcp_task.InputProjectIdTaskID.Ref())

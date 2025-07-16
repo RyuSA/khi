@@ -25,6 +25,8 @@ import (
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/grouper"
 	"github.com/GoogleCloudPlatform/khi/pkg/parser"
+	bqinspectiontype "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/bigquery/inspectiontype"
+	bqtaskid "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/bigquery/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
 	"gopkg.in/yaml.v3"
 )
@@ -53,7 +55,7 @@ func (b *bigqueryJobParser) Grouper() grouper.LogGrouper {
 
 // LogTask implements parser.Parser.
 func (b *bigqueryJobParser) LogTask() taskid.TaskReference[[]*log.Log] {
-	return BigQueryCompletedEventQueryID.Ref()
+	return bqtaskid.BigQueryCompletedEventQueryID.Ref()
 }
 
 // Parse implements parser.Parser.
@@ -156,4 +158,4 @@ func parseTime(timeString string) time.Time {
 	return t
 }
 
-var BigQueryJobParserTask = parser.NewParserTaskFromParser(BigQueryJobParserTaskID, &bigqueryJobParser{}, true, []string{InspectionTypeId})
+var BigQueryJobParserTask = parser.NewParserTaskFromParser(bqtaskid.BigQueryJobParserTaskID, &bigqueryJobParser{}, true, []string{bqinspectiontype.InspectionTypeId})
