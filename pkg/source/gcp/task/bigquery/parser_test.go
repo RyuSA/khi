@@ -34,8 +34,8 @@ func TestParseSuccessBigQueryJob(t *testing.T) {
 		t.Errorf("got error %v, want nil", err)
 	}
 
-	requester := "khi-dev@google.com"
-	gotRevisions := cs.GetRevisions((&BigQueryJob{Name: BigqueryJobName{JobId: "bquxjob_44832c55_195ea1bc54b", ProjectId: "khi-bigquery", Location: "US"}, Statistics: BigQueryJobStatistics{Reservation: "unreserved"}}).ToResourcePath())
+	requester := "requester"
+	gotRevisions := cs.GetRevisions((&BigQueryJob{Name: BigqueryJobName{JobId: "bquxjob_44832c55_195ea1bc54b", ProjectId: "project-id", Location: "US"}, Statistics: BigQueryJobStatistics{Reservation: "unreserved"}}).ToResourcePath())
 	wantRevisions := []*history.StagingResourceRevision{
 		{
 			Verb:       enum.RevisionVerbBigQuryJobCreate,
@@ -70,11 +70,11 @@ func TestParseFailedBVigQueryJob(t *testing.T) {
 		t.Errorf("got error %v, want nil", err)
 	}
 
-	requester := "khi-dev@google.com"
+	requester := "requester"
 	jobPath := (&BigQueryJob{
 		Name: BigqueryJobName{
 			JobId:     "scheduled_query_67fe258f-0000-29b2-818e-2405888306ac",
-			ProjectId: "khi-bigquery",
+			ProjectId: "project-id",
 			Location:  "US",
 		},
 		Statistics: BigQueryJobStatistics{
