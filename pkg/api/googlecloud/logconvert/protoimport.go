@@ -18,4 +18,5 @@ package logconvert
 import (
 	_ "google.golang.org/api/logging/v2"
 	_ "google.golang.org/genproto/googleapis/cloud/audit"
+	_ "google.golang.org/genproto/googleapis/cloud/bigquery/logging/v1"
 )

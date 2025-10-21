@@ -12,19 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bigquery_query
+package googlecloudbigquery_impl
 
 import (
 	"context"
 	"fmt"
 
-	inspection_task_interface "github.com/GoogleCloudPlatform/khi/pkg/inspection/interface"
+	coretask "github.com/GoogleCloudPlatform/khi/pkg/core/task"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
-	"github.com/GoogleCloudPlatform/khi/pkg/source/gcp/query"
-	gcp_task "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task"
-	bqtaskid "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/bigquery/taskid"
-	"github.com/GoogleCloudPlatform/khi/pkg/task"
-	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
+	googlecloudbigquery_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudbigquery/contract"
+	googlecloudcommon_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudcommon/contract"
+	inspectioncore_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/inspectioncore/contract"
 )
 
 func GenerateBigQueryJobCompletedFilter(projectId string) string {
@@ -35,9 +34,9 @@ protoPayload.serviceData.jobCompletedEvent.eventName="query_job_completed"
 `, projectId)
 }
 
-var BigQueryJobCompletedTask = query.NewQueryGeneratorTask(bqtaskid.BigQueryCompletedEventQueryID, "BigQuery CompletedEvent logs", enum.LogTypeBigQueryResource, []taskid.UntypedTaskReference{
-	gcp_task.InputProjectIdTaskID.Ref(),
-}, &query.ProjectIDDefaultResourceNamesGenerator{}, func(ctx context.Context, i inspection_task_interface.InspectionTaskMode) ([]string, error) {
-	projectId := task.GetTaskResult(ctx, gcp_task.InputProjectIdTaskID.Ref())
+var BigQueryJobCompletedTask = googlecloudcommon_contract.NewCloudLoggingListLogTask(googlecloudbigquery_contract.BigQueryCompletedEventQueryID, "BigQuery CompletedEvent logs", enum.LogTypeBigQueryResource, []taskid.UntypedTaskReference{
+	googlecloudcommon_contract.InputProjectIdTaskID.Ref(),
+}, &googlecloudcommon_contract.ProjectIDDefaultResourceNamesGenerator{}, func(ctx context.Context, i inspectioncore_contract.InspectionTaskModeType) ([]string, error) {
+	projectId := coretask.GetTaskResult(ctx, googlecloudcommon_contract.InputProjectIdTaskID.Ref())
 	return []string{GenerateBigQueryJobCompletedFilter(projectId)}, nil
 }, GenerateBigQueryJobCompletedFilter("google-cloud-project-id"))

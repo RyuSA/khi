@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bigquery
+package googlecloudbigquery_impl
 
 import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
+	googlecloudbigquery_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudbigquery/contract"
 	"github.com/GoogleCloudPlatform/khi/pkg/testutil"
 	parser_test "github.com/GoogleCloudPlatform/khi/pkg/testutil/parser"
 	"github.com/google/go-cmp/cmp"
@@ -35,7 +36,7 @@ func TestParseSuccessBigQueryJob(t *testing.T) {
 	}
 
 	requester := "requester"
-	gotRevisions := cs.GetRevisions((&BigQueryJob{Name: BigqueryJobName{JobId: "bquxjob_44832c55_195ea1bc54b", ProjectId: "project-id", Location: "US"}, Statistics: BigQueryJobStatistics{Reservation: "unreserved"}}).ToResourcePath())
+	gotRevisions := cs.GetRevisions((&googlecloudbigquery_contract.BigQueryJob{Name: googlecloudbigquery_contract.BigqueryJobName{JobId: "bquxjob_44832c55_195ea1bc54b", ProjectId: "project-id", Location: "US"}, Statistics: googlecloudbigquery_contract.BigQueryJobStatistics{Reservation: "unreserved"}}).ToResourcePath())
 	wantRevisions := []*history.StagingResourceRevision{
 		{
 			Verb:       enum.RevisionVerbBigQuryJobCreate,
@@ -71,13 +72,13 @@ func TestParseFailedBVigQueryJob(t *testing.T) {
 	}
 
 	requester := "requester"
-	jobPath := (&BigQueryJob{
-		Name: BigqueryJobName{
+	jobPath := (&googlecloudbigquery_contract.BigQueryJob{
+		Name: googlecloudbigquery_contract.BigqueryJobName{
 			JobId:     "scheduled_query_67fe258f-0000-29b2-818e-2405888306ac",
 			ProjectId: "project-id",
 			Location:  "US",
 		},
-		Statistics: BigQueryJobStatistics{
+		Statistics: googlecloudbigquery_contract.BigQueryJobStatistics{
 			Reservation: "unreserved",
 		},
 	}).ToResourcePath()

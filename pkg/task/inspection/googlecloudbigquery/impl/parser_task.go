@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bigquery
+package googlecloudbigquery_impl
 
 import (
 	"context"
@@ -20,14 +20,13 @@ import (
 	"time"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/structured"
-	"github.com/GoogleCloudPlatform/khi/pkg/log"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/inspection/legacyparser"
+	"github.com/GoogleCloudPlatform/khi/pkg/core/task/taskid"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/enum"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history"
 	"github.com/GoogleCloudPlatform/khi/pkg/model/history/grouper"
-	"github.com/GoogleCloudPlatform/khi/pkg/parser"
-	bqinspectiontype "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/bigquery/inspectiontype"
-	bqtaskid "github.com/GoogleCloudPlatform/khi/pkg/source/gcp/task/bigquery/taskid"
-	"github.com/GoogleCloudPlatform/khi/pkg/task/taskid"
+	"github.com/GoogleCloudPlatform/khi/pkg/model/log"
+	googlecloudbigquery_contract "github.com/GoogleCloudPlatform/khi/pkg/task/inspection/googlecloudbigquery/contract"
 	"gopkg.in/yaml.v3"
 )
 
@@ -55,7 +54,7 @@ func (b *bigqueryJobParser) Grouper() grouper.LogGrouper {
 
 // LogTask implements parser.Parser.
 func (b *bigqueryJobParser) LogTask() taskid.TaskReference[[]*log.Log] {
-	return bqtaskid.BigQueryCompletedEventQueryID.Ref()
+	return googlecloudbigquery_contract.BigQueryCompletedEventQueryID.Ref()
 }
 
 // Parse implements parser.Parser.
@@ -74,7 +73,7 @@ func (b *bigqueryJobParser) Parse(ctx context.Context, l *log.Log, cs *history.C
 	body, _ := l.Serialize("protoPayload.serviceData.jobCompletedEvent.job", &structured.YAMLNodeSerializer{})
 
 	// Record New Revision: Inserted BQ job
-	cs.RecordRevision(resourcePath, &history.StagingResourceRevision{
+	cs.AddRevision(resourcePath, &history.StagingResourceRevision{
 		Verb:       enum.RevisionVerbBigQuryJobCreate,
 		State:      enum.RevisionStateBigQueryJobPending,
 		Requestor:  requester,
@@ -84,7 +83,7 @@ func (b *bigqueryJobParser) Parse(ctx context.Context, l *log.Log, cs *history.C
 	})
 
 	// Record New Revision: Started BQ job
-	cs.RecordRevision(resourcePath, &history.StagingResourceRevision{
+	cs.AddRevision(resourcePath, &history.StagingResourceRevision{
 		Verb:       enum.RevisionVerbBigQuryJobStart,
 		State:      enum.RevisionStateBigQueryJobRunning,
 		Requestor:  requester,
@@ -104,7 +103,7 @@ func (b *bigqueryJobParser) Parse(ctx context.Context, l *log.Log, cs *history.C
 	}
 
 	// Record New Revision: Finished BQ job
-	cs.RecordRevision(resourcePath, &history.StagingResourceRevision{
+	cs.AddRevision(resourcePath, &history.StagingResourceRevision{
 		Verb:       enum.RevisionVerbBigQuryJobDone,
 		State:      state,
 		Requestor:  requester,
@@ -118,14 +117,14 @@ func (b *bigqueryJobParser) Parse(ctx context.Context, l *log.Log, cs *history.C
 		str = "success"
 	} else {
 		str = "failed"
-		cs.RecordLogSeverity(enum.SeverityError)
+		cs.SetLogSeverity(enum.SeverityError)
 	}
 
 	// This summary shows on right panel
-	cs.RecordLogSummary(fmt.Sprintf("BigQuery Job(%s) finished with status %s", job.Name.JobId, str))
+	cs.SetLogSummary(fmt.Sprintf("BigQuery Job(%s) finished with status %s", job.Name.JobId, str))
 
 	// This event shows on the timeline view as ♢
-	cs.RecordEvent(resourcePath)
+	cs.AddEvent(resourcePath)
 	return nil
 }
 
@@ -134,14 +133,14 @@ func (b *bigqueryJobParser) TargetLogType() enum.LogType {
 	return enum.LogTypeEvent
 }
 
-var _ parser.Parser = (*bigqueryJobParser)(nil)
+var _ legacyparser.Parser = (*bigqueryJobParser)(nil)
 
-func NewBigQueryJobFromYamlStrings(l *log.Log) (*BigQueryJob, error) {
+func NewBigQueryJobFromYamlStrings(l *log.Log) (*googlecloudbigquery_contract.BigQueryJob, error) {
 	jobYaml, err := l.Serialize("protoPayload.serviceData.jobCompletedEvent.job", &structured.YAMLNodeSerializer{})
 	if err != nil {
 		return nil, err
 	}
-	var job = &BigQueryJob{}
+	var job = &googlecloudbigquery_contract.BigQueryJob{}
 	err = yaml.Unmarshal(jobYaml, job)
 	if err != nil {
 		return nil, err
@@ -158,4 +157,4 @@ func parseTime(timeString string) time.Time {
 	return t
 }
 
-var BigQueryJobParserTask = parser.NewParserTaskFromParser(bqtaskid.BigQueryJobParserTaskID, &bigqueryJobParser{}, true, []string{bqinspectiontype.InspectionTypeId})
+var BigQueryJobParserTask = legacyparser.NewParserTaskFromParser(googlecloudbigquery_contract.BigQueryJobParserTaskID, &bigqueryJobParser{}, 1000, true, []string{googlecloudbigquery_contract.InspectionTypeId})
