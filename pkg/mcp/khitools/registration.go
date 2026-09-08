@@ -35,7 +35,6 @@ func NewTools(deps Dependencies) ([]mcp.Tool, error) {
 		deps.DefaultExportDestination = DefaultExportDestination
 	}
 	return []mcp.Tool{
-		&usageGuideTool{},
 		&listInspectionTypesTool{deps: deps},
 		&listFeaturesTool{deps: deps},
 		&prepareJobCommandTool{deps: deps},

@@ -34,7 +34,7 @@ func TestNewToolsExposesTheToolsInTheIntendedOrder(t *testing.T) {
 		names = append(names, tool.Definition().Name)
 	}
 	// Models tend to try tools in the order they are listed, so the order is the loop order.
-	want := []string{"khi_usage_guide", "khi_list_inspection_types", "khi_list_features", "khi_prepare_job_command"}
+	want := []string{"khi_list_inspection_types", "khi_list_features", "khi_prepare_job_command"}
 	if diff := cmp.Diff(want, names); diff != "" {
 		t.Errorf("tool names mismatch (-want +got):\n%s", diff)
 	}
@@ -78,8 +78,9 @@ func TestToolDefinitions(t *testing.T) {
 }
 
 func TestServerInstructionsNameEveryTool(t *testing.T) {
-	// The instructions are the only guidance a model gets without spending a tool call, so a tool
-	// missing from them is effectively invisible until something else mentions it.
+	// The instructions are the only place this server explains itself, and the only guidance a
+	// model gets without spending a tool call. A tool missing from them is effectively invisible
+	// until the model reads tools/list closely.
 	tools, err := NewTools(newFakeDependencies(t))
 	if err != nil {
 		t.Fatalf("NewTools returned an unexpected error: %v", err)
@@ -89,12 +90,21 @@ func TestServerInstructionsNameEveryTool(t *testing.T) {
 		if !strings.Contains(ServerInstructions, name) {
 			t.Errorf("ServerInstructions does not mention the tool %s", name)
 		}
-		if name == "khi_usage_guide" {
-			// The guide is the document itself and has no reason to name itself in its body.
-			continue
-		}
-		if !strings.Contains(usageGuideText, name) {
-			t.Errorf("usageGuideText does not mention the tool %s", name)
-		}
+	}
+}
+
+func TestServerInstructionsLoopFitsInThePrefixBudget(t *testing.T) {
+	// Codex treats the leading InstructionsPrefixBudget characters as the guidance it has while
+	// deciding how to use the server. The sentence describing the loop is the single most useful
+	// thing in the text, so it has to finish inside that prefix rather than being cut in half.
+	loopEnd := strings.Index(ServerInstructions, instructionsLoopSentenceEnd)
+	if loopEnd < 0 {
+		t.Fatalf("ServerInstructions no longer contains the loop sentence ending %q", instructionsLoopSentenceEnd)
+	}
+	loopEnd += len(instructionsLoopSentenceEnd)
+
+	if loopEnd > InstructionsPrefixBudget {
+		t.Errorf("the loop sentence ends at character %d, past the %d character prefix budget.\nShorten the text before it so the loop stays self-contained:\n%s",
+			loopEnd, InstructionsPrefixBudget, ServerInstructions[:InstructionsPrefixBudget])
 	}
 }

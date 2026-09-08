@@ -57,10 +57,11 @@ In the `mcpServers` object of the MCP settings JSON:
 
 | Tool | Purpose | Credentials |
 | --- | --- | --- |
-| `khi_usage_guide` | Explains KHI and the tool loop in full | Not required |
 | `khi_list_inspection_types` | Lists the platforms KHI can gather logs from | Not required |
 | `khi_list_features` | Lists the log sources an inspection type can collect | Not required |
 | `khi_prepare_job_command` | Returns the parameter schema, validates the given values, and builds the command once nothing is left to fix | Required for `gcp-*` types |
+
+There is no tool that explains the server. KHI returns that explanation as the MCP `instructions` field during the initialize handshake, and every harness listed above folds it into the model context automatically, so an agent knows the loop before it calls anything.
 
 ## The loop
 

@@ -1,19 +1,5 @@
 [
   {
-    "name": "khi_usage_guide",
-    "title": "How to use KHI from an agent",
-    "description": "Explains what KHI is, what a .khi file contains, and the exact sequence of tool calls that turns an incident report into a runnable KHI job mode command. Read this first when you have not used these tools before, or when a call fails in a way you do not understand.",
-    "inputSchema": {
-      "type": "object",
-      "properties": {},
-      "additionalProperties": false
-    },
-    "annotations": {
-      "readOnlyHint": true,
-      "idempotentHint": true
-    }
-  },
-  {
     "name": "khi_list_inspection_types",
     "title": "List KHI inspection types",
     "description": "Lists the platforms KHI can gather logs from, such as GKE, Cloud Composer or plain Kubernetes log files. Call this first: the returned id selects which parameters and features exist for everything that follows. Needs no credentials.",
