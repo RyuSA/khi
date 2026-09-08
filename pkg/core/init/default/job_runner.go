@@ -58,18 +58,10 @@ var JobRunnerInitializer = &coreinit.Initializer{
 				return fmt.Errorf("failed to create inspection type %s: %w", *jobParams.InspectionType, err)
 			}
 
-			features := strings.Split(*jobParams.InspectionFeatures, ",")
 			t := inspectionServer.GetInspection(inspectionID)
-			if len(features) == 1 && strings.ToUpper(features[0]) == "ALL" {
-				availableFeatures, err := t.FeatureList()
-				if err != nil {
-					return fmt.Errorf("failed to obtain feature list: %w", err)
-				}
-				allFeatures := []string{}
-				for _, af := range availableFeatures {
-					allFeatures = append(allFeatures, af.Id)
-				}
-				features = allFeatures
+			features, err := t.ResolveFeatureList(strings.Split(*jobParams.InspectionFeatures, ","))
+			if err != nil {
+				return err
 			}
 			if err := t.SetFeatureList(features); err != nil {
 				return fmt.Errorf("failed to set features: %w", err)

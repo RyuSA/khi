@@ -65,8 +65,6 @@ func getAuditLogJobTestConfig() *taskrecord.JobTestConfig {
 				"@all_cluster_scoped",
 				"@all_namespaced",
 			},
-			"timezoneShift":      "9",
-			"timezoneShiftHours": 9,
 		},
 		RecordedTasks: []taskid.UntypedTaskReference{
 			googlecloudlogk8saudit_contract.GCPK8sAuditLogListLogEntriesTaskID.Ref(),

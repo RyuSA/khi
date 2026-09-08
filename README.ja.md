@@ -97,6 +97,7 @@ gcr.io/kubernetes-history-inspector/release:latest
 ---
 
 - CI/CD やアラート発生時などの自動化で Web サーバを起動せずに `.khi` ファイルを生成する場合は [Job モードガイド](/docs/ja/setup-guide/job-mode.md) を参照してください。
+- AI コーディングエージェントに Model Context Protocol 経由でインシデント情報から Job モードのコマンドを組み立てさせる場合は [MCP モードガイド](/docs/ja/setup-guide/mcp-mode.md) を参照してください。
 - ソースコードから KHI をビルドする場合は [開発ガイド](/docs/ja/development-contribution/development-guide.md) を参照してください。
 - 詳細は [Getting Started](/docs/en/tutorial/getting-started.md) を参照してください。
 

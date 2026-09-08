@@ -215,3 +215,42 @@ func isProvidedFromEnvironmentVariable(key string) bool {
 	_, found := os.LookupEnv(key)
 	return found
 }
+
+// HasRawCommandlineFlag reports whether the given flag name is present in os.Args.
+// Unlike isProvidedFromCommandlineArgs, this scans the raw arguments and therefore
+// works before flag.Parse() is called. It is needed by initializers running earlier
+// than the parameter parsing step, such as the global logger initializer.
+// Both `-name` and `--name` forms are recognized, with or without an inline `=value`.
+// Arguments after the `--` terminator are not scanned.
+func HasRawCommandlineFlag(name string) bool {
+	if name == "" || len(os.Args) < 2 {
+		return false
+	}
+	for _, arg := range os.Args[1:] {
+		if arg == "--" {
+			return false
+		}
+		if !strings.HasPrefix(arg, "-") {
+			continue
+		}
+		trimmed := strings.TrimPrefix(strings.TrimPrefix(arg, "-"), "-")
+		if key, _, found := strings.Cut(trimmed, "="); found {
+			trimmed = key
+		}
+		if trimmed == name {
+			return true
+		}
+	}
+	return false
+}
+
+// HasTruthyEnvironmentVariable reports whether the given environment variable is set to a
+// value this package treats as true for a boolean flag. It mirrors the environment variable
+// handling of Bool and is usable before flag.Parse() has run.
+func HasTruthyEnvironmentVariable(envKey string) bool {
+	if !isProvidedFromEnvironmentVariable(envKey) {
+		return false
+	}
+	_, falsy := envFalsyValues[strings.ToLower(os.Getenv(envKey))]
+	return !falsy
+}

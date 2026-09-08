@@ -38,8 +38,7 @@ var GinEngineInitializer = &coreinit.Initializer{
 		InitializerIDGinServer,
 	},
 	Init: func(ctx *coreinit.InitContext) error {
-		jobParams := coreinit.MustGet(ctx, JobParametersKey)
-		if *jobParams.JobMode {
+		if isHeadless(ctx) {
 			return nil
 		}
 		debugParams := coreinit.MustGet(ctx, DebugParametersKey)

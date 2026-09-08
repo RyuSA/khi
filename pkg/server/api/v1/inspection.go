@@ -668,7 +668,9 @@ func convertParametersToMap(params *apiv1.InspectionParameters) map[string]any {
 		}
 	}
 	if params.GetTimezoneShiftHours() != 0 {
-		values["timezoneShiftHours"] = params.GetTimezoneShiftHours()
+		// The key must stay "timezoneShift", which is what TimeZoneShiftInputTask reads and what
+		// the frontend calls this parameter. "timezoneShiftHours" is only the protobuf field name.
+		values[inspectioncore_contract.TimeZoneShiftParameterKey] = params.GetTimezoneShiftHours()
 	}
 	return values
 }

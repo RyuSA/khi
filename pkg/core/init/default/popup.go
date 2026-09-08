@@ -33,8 +33,7 @@ var PopupServiceInitializer = &coreinit.Initializer{
 		InitializerIDServerRunner,
 	},
 	Init: func(ctx *coreinit.InitContext) error {
-		jobParams := coreinit.MustGet(ctx, JobParametersKey)
-		if *jobParams.JobMode {
+		if isHeadless(ctx) {
 			return nil
 		}
 		router := coreinit.MustGet(ctx, GinRouterKey)

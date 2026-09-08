@@ -63,8 +63,7 @@ var ServerRunnerInitializer = &coreinit.Initializer{
 		InitializerIDGinServer,
 	},
 	Init: func(ctx *coreinit.InitContext) error {
-		jobParams := coreinit.MustGet(ctx, JobParametersKey)
-		if *jobParams.JobMode {
+		if isHeadless(ctx) {
 			return nil
 		}
 		serverParams := coreinit.MustGet(ctx, ServerParametersKey)

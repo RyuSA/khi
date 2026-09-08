@@ -17,3 +17,8 @@ package inspectioncore_contract
 type InspectionRequest struct {
 	Values map[string]any
 }
+
+// TimeZoneShiftParameterKey is the InspectionRequest.Values key holding the timezone offset in
+// hours from UTC. Unlike every other parameter key it is not a task reference ID, because the
+// value is supplied by the client rather than by a form task.
+const TimeZoneShiftParameterKey = "timezoneShift"

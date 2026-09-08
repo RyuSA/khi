@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -257,6 +256,39 @@ func deduplicateTasksByPriority(tasks []coretask.UntypedTask) []coretask.Untyped
 		return strings.Compare(a.UntypedID().ReferenceIDString(), b.UntypedID().ReferenceIDString())
 	})
 	return deduplicated
+}
+
+// Dispose cancels the inspection scoped context and releases the resources held by this runner.
+// The runner must not be used after this call. InspectionTaskServer.DeleteInspection calls it.
+func (i *InspectionTaskRunner) Dispose() {
+	i.inspectionCancel()
+}
+
+// ResolveFeatureList expands a feature specification into the concrete feature task IDs to enable.
+// A single element "ALL", compared case insensitively, selects every available feature.
+// An empty specification selects the features enabled by default for the current inspection type.
+func (i *InspectionTaskRunner) ResolveFeatureList(features []string) ([]string, error) {
+	availableFeatures, err := i.FeatureList()
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain feature list: %w", err)
+	}
+	if len(features) == 0 {
+		defaultFeatures := []string{}
+		for _, feature := range availableFeatures {
+			if feature.Enabled {
+				defaultFeatures = append(defaultFeatures, feature.Id)
+			}
+		}
+		return defaultFeatures, nil
+	}
+	if len(features) == 1 && strings.ToUpper(features[0]) == "ALL" {
+		allFeatures := []string{}
+		for _, feature := range availableFeatures {
+			allFeatures = append(allFeatures, feature.Id)
+		}
+		return allFeatures, nil
+	}
+	return features, nil
 }
 
 // FeatureList returns the list of available features for the current inspection type.
@@ -655,7 +687,7 @@ func makeLogger(minLevel slog.Level, logBuffer *bytes.Buffer, withColor bool) sl
 	logThrottleCount := 10 // Similar logs over logThrottleCount will be discarded
 
 	return logger.NewTeeHandler(
-		logger.NewThrottleFilter(logThrottleCount, logger.NewSeverityFilter(minLevel, logger.NewKHIFormatLogger(os.Stdout, withColor))),
+		logger.NewThrottleFilter(logThrottleCount, logger.NewSeverityFilter(minLevel, logger.NewKHIFormatLogger(logger.DefaultLogDestination, withColor))),
 		logger.NewThrottleFilter(logThrottleCount, logger.NewSeverityFilter(minLevel, logger.NewKHIFormatLogger(logBuffer, false))),
 	)
 }

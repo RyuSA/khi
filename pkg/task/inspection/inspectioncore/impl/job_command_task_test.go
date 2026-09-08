@@ -22,13 +22,15 @@ import (
 
 func TestGenerateJobModeCommand(t *testing.T) {
 	testCases := []struct {
-		name            string
-		inspectionType  string
-		enabledFeatures []string
-		taskInput       map[string]any
-		fileFieldIDs    []string
-		want            string
-		wantErr         bool
+		name              string
+		inspectionType    string
+		enabledFeatures   []string
+		taskInput         map[string]any
+		fileFieldIDs      []string
+		binaryPath        string
+		exportDestination string
+		want              string
+		wantErr           bool
 	}{
 		{
 			name:            "basic command without features and input",
@@ -108,11 +110,58 @@ func TestGenerateJobModeCommand(t *testing.T) {
   --job-export-destination="output.khi"`,
 			wantErr: false,
 		},
+		{
+			name:            "command with a file input field keeps a caller provided local path",
+			inspectionType:  "oss",
+			enabledFeatures: []string{"oss-audit"},
+			taskInput: map[string]any{
+				"audit-log-files": "/var/log/audit.jsonl",
+			},
+			want: `./khi \
+  --job-mode \
+  --job-inspection-type="oss" \
+  --job-inspection-features="oss-audit" \
+  --job-inspection-values='{
+  "audit-log-files": "/var/log/audit.jsonl"
+}' \
+  --job-export-destination="output.khi"`,
+			wantErr: false,
+		},
+		{
+			name:              "command with a custom binary path and export destination",
+			inspectionType:    "gke",
+			enabledFeatures:   []string{"audit"},
+			taskInput:         nil,
+			binaryPath:        "/usr/local/bin/khi",
+			exportDestination: "/tmp/incident-1234.khi",
+			want: `/usr/local/bin/khi \
+  --job-mode \
+  --job-inspection-type="gke" \
+  --job-inspection-features="audit" \
+  --job-inspection-values='' \
+  --job-export-destination="/tmp/incident-1234.khi"`,
+			wantErr: false,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := GenerateJobModeCommand(tc.inspectionType, tc.enabledFeatures, tc.taskInput, tc.fileFieldIDs)
+			binaryPath := tc.binaryPath
+			if binaryPath == "" {
+				binaryPath = "./khi"
+			}
+			exportDestination := tc.exportDestination
+			if exportDestination == "" {
+				exportDestination = "output.khi"
+			}
+			got, err := GenerateJobModeCommand(JobModeCommandOptions{
+				BinaryPath:          binaryPath,
+				InspectionType:      tc.inspectionType,
+				EnabledFeatures:     tc.enabledFeatures,
+				Values:              tc.taskInput,
+				PlaceholderFieldIDs: tc.fileFieldIDs,
+				ExportDestination:   exportDestination,
+			})
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("GenerateJobModeCommand() error = %v, wantErr %v", err, tc.wantErr)
 			}

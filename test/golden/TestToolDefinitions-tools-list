@@ -1,0 +1,91 @@
+[
+  {
+    "name": "khi_usage_guide",
+    "title": "How to use KHI from an agent",
+    "description": "Explains what KHI is, what a .khi file contains, and the exact sequence of tool calls that turns an incident report into a runnable KHI job mode command. Read this first when you have not used these tools before, or when a call fails in a way you do not understand.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "khi_list_inspection_types",
+    "title": "List KHI inspection types",
+    "description": "Lists the platforms KHI can gather logs from, such as GKE, Cloud Composer or plain Kubernetes log files. Call this first: the returned id selects which parameters and features exist for everything that follows. Needs no credentials.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "khi_list_features",
+    "title": "List KHI features for an inspection type",
+    "description": "Lists the log sources an inspection type can collect. Each description says which logs the feature reads and which kind of problem it helps investigate, so use them to pick the features matching the incident. Needs no credentials.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "inspectionType": {
+          "type": "string",
+          "description": "An id returned by khi_list_inspection_types, for example \"gcp-gke\"."
+        }
+      },
+      "required": [
+        "inspectionType"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "khi_prepare_job_command",
+    "title": "Discover KHI parameters and build the job mode command",
+    "description": "Returns the parameters an inspection needs, validates the values given so far, and once nothing is left to fix returns the runnable \"khi --job-mode\" command line. Call it with an empty values object to discover the parameters, then repeatedly with more values until \"ready\" is true; \"blockingErrors\" names exactly what is still missing. This is the authoritative parameter schema, which depends on the inspection type, the enabled features and live cloud state, so never guess parameter ids. Requires Google Cloud credentials for the \"gcp-*\" inspection types.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "inspectionType": {
+          "type": "string",
+          "description": "An id returned by khi_list_inspection_types, for example \"gcp-gke\"."
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Feature ids returned by khi_list_features, or the single element \"ALL\" to enable every feature. Omit to use the features enabled by default."
+        },
+        "values": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Map of parameter id to value. Start with {} to discover the parameters. Each value must match the parameter's valueJSONType exactly: \"string\" takes a JSON string, \"string[]\" takes a JSON array of strings.",
+          "default": {}
+        },
+        "exportDestination": {
+          "type": "string",
+          "description": "Path the generated command writes the .khi file to. Defaults to \"output.khi\"."
+        }
+      },
+      "required": [
+        "inspectionType"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  }
+]

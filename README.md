@@ -95,6 +95,7 @@ gcr.io/kubernetes-history-inspector/release:latest
 ---
 
 - For running KHI in automated workflows (CI/CD, alert triggers, etc.) without starting the web server, see the [Job Mode Guide](/docs/en/setup-guide/job-mode.md).
+- For letting an AI coding agent build KHI job mode commands from an incident report over the Model Context Protocol, see the [MCP Mode Guide](/docs/en/setup-guide/mcp-mode.md).
 - To build KHI from source code, see the [Development Guide](/docs/en/development-contribution/development-guide.md).
 - For more details, try [Getting started](/docs/en/tutorial/getting-started.md).
 

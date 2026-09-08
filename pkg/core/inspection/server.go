@@ -17,6 +17,7 @@ package coreinspection
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/common/idgenerator"
 	"github.com/GoogleCloudPlatform/khi/pkg/common/typedmap"
@@ -66,6 +67,7 @@ type InspectionTaskServer struct {
 	inspectionTypes []*InspectionType
 	// inspections are generated inspection task runers
 	inspections           map[string]*InspectionTaskRunner
+	inspectionsLock       sync.RWMutex
 	inspectionIDGenerator idgenerator.IDGenerator
 
 	ioConfig *inspectioncore_contract.IOConfig
@@ -133,13 +135,35 @@ func (s *InspectionTaskServer) CreateInspection(inspectionType string) (string, 
 	if err != nil {
 		return "", err
 	}
+	s.inspectionsLock.Lock()
+	defer s.inspectionsLock.Unlock()
 	s.inspections[inspectionRunner.ID] = inspectionRunner
 	return inspectionRunner.ID, nil
 }
 
 // Inspection returns an instance of an Inspection queried with given inspection ID.
 func (s *InspectionTaskServer) GetInspection(inspectionID string) *InspectionTaskRunner {
+	s.inspectionsLock.RLock()
+	defer s.inspectionsLock.RUnlock()
 	return s.inspections[inspectionID]
+}
+
+// DeleteInspection removes the inspection of the given ID and releases the resources it holds.
+// It reports whether an inspection with the given ID existed.
+//
+// Callers creating short lived inspections, such as the MCP tools resolving a parameter schema,
+// must call this when they are done. Otherwise the runner and its context leak for the process
+// lifetime because nothing else evicts entries from this map.
+func (s *InspectionTaskServer) DeleteInspection(inspectionID string) bool {
+	s.inspectionsLock.Lock()
+	runner, found := s.inspections[inspectionID]
+	delete(s.inspections, inspectionID)
+	s.inspectionsLock.Unlock()
+	if !found {
+		return false
+	}
+	runner.Dispose()
+	return true
 }
 
 func (s *InspectionTaskServer) GetAllInspectionTypes() []*InspectionType {
@@ -156,6 +180,8 @@ func (s *InspectionTaskServer) GetInspectionType(inspectionTypeId string) *Inspe
 }
 
 func (s *InspectionTaskServer) GetAllRunners() []*InspectionTaskRunner {
+	s.inspectionsLock.RLock()
+	defer s.inspectionsLock.RUnlock()
 	inspections := []*InspectionTaskRunner{}
 	for _, value := range s.inspections {
 		inspections = append(inspections, value)
@@ -181,6 +207,8 @@ func (s *InspectionTaskServer) IOConfig() *inspectioncore_contract.IOConfig {
 // RegisterImportedInspection registers a completed imported inspection with the given ID, store, and metadata.
 func (s *InspectionTaskServer) RegisterImportedInspection(id string, store inspectioncore_contract.Store, metadata *typedmap.ReadonlyTypedMap) *InspectionTaskRunner {
 	runner := NewImportedInspectionRunner(s, s.ioConfig, id, store, metadata, s.runContextOptions...)
+	s.inspectionsLock.Lock()
+	defer s.inspectionsLock.Unlock()
 	s.inspections[id] = runner
 	return runner
 }

@@ -33,10 +33,15 @@ func TestServerRunnerInitializer(t *testing.T) {
 	testCases := []struct {
 		name    string
 		jobMode bool
+		mcpMode bool
 	}{
 		{
 			name:    "skips server registration when in job mode",
 			jobMode: true,
+		},
+		{
+			name:    "skips server registration when in MCP mode",
+			mcpMode: true,
 		},
 		{
 			name:    "registers server runner when not in job mode",
@@ -49,9 +54,7 @@ func TestServerRunnerInitializer(t *testing.T) {
 			engine := coreinit.NewEngine(context.Background())
 			ctx := engine.Context()
 
-			coreinit.Set(ctx, JobParametersKey, &parameters.JobParameters{
-				JobMode: &tc.jobMode,
-			})
+			setHeadlessModeParameters(ctx, tc.jobMode, tc.mcpMode)
 			host := "127.0.0.1"
 			port := 8080
 			coreinit.Set(ctx, ServerParametersKey, &parameters.ServerParameters{

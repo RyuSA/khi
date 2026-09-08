@@ -17,6 +17,7 @@ package logger
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"sync"
@@ -129,9 +130,19 @@ func (g *globalLoggerHandler) UnregisterTaskLogger(inspectionId string, taskId t
 	delete((*g.handlers), loggerId)
 }
 
+// DefaultLogDestination is the writer every human readable KHI log is written to.
+//
+// Modes that reserve stdout for a machine readable protocol must replace this before
+// InitGlobalKHILogger runs. MCP stdio mode writes JSON-RPC frames on stdout, so a single
+// stray log line there breaks the client connection.
+//
+// Any new log destination added under pkg/ must go through this variable instead of
+// referring to os.Stdout directly.
+var DefaultLogDestination io.Writer = os.Stdout
+
 // InitGlobalKHILogger initializes the global logger for KHI.
 func InitGlobalKHILogger() {
-	globalLogHandler = localInitInspectionLogger(NewKHIFormatLogger(os.Stdout, true))
+	globalLogHandler = localInitInspectionLogger(NewKHIFormatLogger(DefaultLogDestination, true))
 	slog.SetDefault(slog.New(globalLogHandler))
 }
 

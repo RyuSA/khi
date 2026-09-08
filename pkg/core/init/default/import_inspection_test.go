@@ -22,7 +22,6 @@ import (
 
 	coreinit "github.com/GoogleCloudPlatform/khi/pkg/core/init"
 	coreinspection "github.com/GoogleCloudPlatform/khi/pkg/core/inspection"
-	"github.com/GoogleCloudPlatform/khi/pkg/parameters"
 	"github.com/GoogleCloudPlatform/khi/pkg/server/workbench"
 	"github.com/gin-gonic/gin"
 )
@@ -33,6 +32,7 @@ func TestImportInspectionInitializer(t *testing.T) {
 	testCases := []struct {
 		name        string
 		jobMode     bool
+		mcpMode     bool
 		basePath    string
 		requestPath string
 		wantHit     bool
@@ -58,16 +58,20 @@ func TestImportInspectionInitializer(t *testing.T) {
 			requestPath: "/api.v1.ImportInspectionService/StartImportInspection",
 			wantHit:     false,
 		},
+		{
+			name:        "skips registration when in MCP mode",
+			mcpMode:     true,
+			basePath:    "",
+			requestPath: "/api.v1.ImportInspectionService/StartImportInspection",
+			wantHit:     false,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			engine := coreinit.NewEngine(context.Background())
 			ctx := engine.Context()
-			jobParams := &parameters.JobParameters{
-				JobMode: &tc.jobMode,
-			}
-			coreinit.Set(ctx, JobParametersKey, jobParams)
+			setHeadlessModeParameters(ctx, tc.jobMode, tc.mcpMode)
 
 			ginEngine := gin.New()
 			var router gin.IRouter = ginEngine.Group(tc.basePath)

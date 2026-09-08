@@ -52,7 +52,11 @@ func (s *JobModeStore) GetUploadToken(id string, verifier UploadFileVerifier, fi
 
 // GetResult resolves the file for the given token from the local file path in
 // the request values, verifies it, and returns a completed UploadResult.
-// It returns an error when the token is unknown or no path was provided.
+// It returns an error only when the token is unknown.
+//
+// A missing or empty path yields a waiting result rather than an error, so that the form
+// field reports it through its own hint like any other unsatisfied parameter. Returning an
+// error here would abort the whole dry run and hide every other field's validation state.
 func (s *JobModeStore) GetResult(token UploadToken, req map[string]any) (UploadResult, error) {
 	s.lock.RLock()
 	verifier, found := s.verifiers[token.GetID()]
@@ -63,7 +67,11 @@ func (s *JobModeStore) GetResult(token UploadToken, req map[string]any) (UploadR
 	}
 	path, ok := req[fieldID].(string)
 	if !ok || path == "" {
-		return UploadResult{}, fmt.Errorf("no local file path was provided for the form field %q in job mode", fieldID)
+		return UploadResult{
+			Token:         token,
+			StoreProvider: s.provider,
+			Status:        UploadStatusWaiting,
+		}, nil
 	}
 	localToken := &LocalFileUploadToken{FilePath: path}
 	verificationError := verifier.Verify(s.provider, localToken)

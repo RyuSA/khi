@@ -16,6 +16,7 @@ package defaultinit
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud/legacy"
 	"github.com/GoogleCloudPlatform/khi/pkg/api/googlecloud/options"
@@ -57,6 +58,14 @@ var InspectionTaskServerInitializer = &coreinit.Initializer{
 		ioconfig, err := inspectioncore_contract.NewIOConfigFromParameter(commonParams)
 		if err != nil {
 			return fmt.Errorf("failed to construct IOConfig: %w", err)
+		}
+		// Nothing else creates these folders. Without this, a run in a directory lacking a "data"
+		// folder fails only at the very end, once the whole inspection has already been done and
+		// the serializer cannot open the result file.
+		for _, folder := range []string{ioconfig.DataDestination, ioconfig.TemporaryFolder} {
+			if err := os.MkdirAll(folder, 0755); err != nil {
+				return fmt.Errorf("failed to prepare the folder %s: %w", folder, err)
+			}
 		}
 		inspectionServer, err := coreinspection.NewServer(ioconfig)
 		if err != nil {

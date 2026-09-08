@@ -285,7 +285,7 @@ func TestJobModeStoreGetResult(t *testing.T) {
 	}{
 		{name: "verification passes", pathInReq: true, verifierError: nil, wantVerifyError: false},
 		{name: "verification fails", pathInReq: true, verifierError: errors.New("bad file"), wantVerifyError: true},
-		{name: "no path returns an error", pathInReq: false, wantErr: true},
+		{name: "no path reports a waiting status instead of an error", pathInReq: false, wantErr: false},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

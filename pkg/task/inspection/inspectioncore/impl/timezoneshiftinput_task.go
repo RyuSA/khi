@@ -26,7 +26,7 @@ import (
 
 var TimeZoneShiftInputTask = inspectiontaskbase.NewInspectionTask(inspectioncore_contract.TimeZoneShiftInputTaskID, []taskid.UntypedTaskReference{}, func(ctx context.Context, taskMode inspectioncore_contract.InspectionTaskModeType) (*time.Location, error) {
 	req := khictx.MustGetValue(ctx, inspectioncore_contract.InspectionTaskInput)
-	if tzShiftAny, found := req["timezoneShift"]; found {
+	if tzShiftAny, found := req[inspectioncore_contract.TimeZoneShiftParameterKey]; found {
 		if tzShiftFloat, convertible := tzShiftAny.(float64); convertible {
 			return time.FixedZone("Unknown", int(tzShiftFloat*3600)), nil
 		} else {

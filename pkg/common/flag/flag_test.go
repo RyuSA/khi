@@ -464,3 +464,61 @@ func TestFloat64(t *testing.T) {
 		})
 	}
 }
+
+func TestHasRawCommandlineFlag(t *testing.T) {
+	testCases := []struct {
+		name string
+		args []string
+		flag string
+		want bool
+	}{
+		{name: "absent", args: []string{"khi"}, flag: "mcp-mode", want: false},
+		{name: "single dash", args: []string{"khi", "-mcp-mode"}, flag: "mcp-mode", want: true},
+		{name: "double dash", args: []string{"khi", "--mcp-mode"}, flag: "mcp-mode", want: true},
+		{name: "with an inline value", args: []string{"khi", "--mcp-mode=true"}, flag: "mcp-mode", want: true},
+		{name: "among other flags", args: []string{"khi", "--port=8080", "--mcp-mode", "--verbose"}, flag: "mcp-mode", want: true},
+		{name: "a different flag with the same prefix", args: []string{"khi", "--mcp-mode-extra"}, flag: "mcp-mode", want: false},
+		{name: "a bare value is not a flag", args: []string{"khi", "mcp-mode"}, flag: "mcp-mode", want: false},
+		{name: "after the terminator", args: []string{"khi", "--", "--mcp-mode"}, flag: "mcp-mode", want: false},
+		{name: "an empty name never matches", args: []string{"khi", "--mcp-mode"}, flag: "", want: false},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			previous := os.Args
+			t.Cleanup(func() { os.Args = previous })
+			os.Args = tc.args
+
+			if got := HasRawCommandlineFlag(tc.flag); got != tc.want {
+				t.Errorf("HasRawCommandlineFlag(%q) = %v, want %v", tc.flag, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestHasTruthyEnvironmentVariable(t *testing.T) {
+	testCases := []struct {
+		name   string
+		envKey string
+		// value is the environment variable value. An empty setKey means the variable is unset.
+		setKey string
+		value  string
+		want   bool
+	}{
+		{name: "unset", envKey: "KHI_TEST_MCP_MODE", want: false},
+		{name: "empty key never matches", envKey: "", want: false},
+		{name: "set to true", envKey: "KHI_TEST_MCP_MODE", setKey: "KHI_TEST_MCP_MODE", value: "true", want: true},
+		{name: "set to an arbitrary truthy value", envKey: "KHI_TEST_MCP_MODE", setKey: "KHI_TEST_MCP_MODE", value: "1", want: true},
+		{name: "set to false", envKey: "KHI_TEST_MCP_MODE", setKey: "KHI_TEST_MCP_MODE", value: "false", want: false},
+		{name: "set to FALSE is compared case insensitively", envKey: "KHI_TEST_MCP_MODE", setKey: "KHI_TEST_MCP_MODE", value: "FALSE", want: false},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.setKey != "" {
+				t.Setenv(tc.setKey, tc.value)
+			}
+			if got := HasTruthyEnvironmentVariable(tc.envKey); got != tc.want {
+				t.Errorf("HasTruthyEnvironmentVariable(%q) = %v, want %v", tc.envKey, got, tc.want)
+			}
+		})
+	}
+}
